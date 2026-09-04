@@ -1,0 +1,48 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/water_carrier.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/water_carrier.png" id="2_body"]
+[ext_resource type="Texture2D" path="res://assets/yoke.png" id="3_yoke"]
+[ext_resource type="Texture2D" path="res://assets/jugs.png" id="4_jugs"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_feet"]
+size = Vector2(8, 6)
+
+[node name="WaterCarrier" type="CharacterBody2D"]
+z_index = 10
+y_sort_enabled = true
+collision_layer = 1
+collision_mask = 1
+script = ExtResource("1_script")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+texture_filter = 0
+texture = ExtResource("2_body")
+offset = Vector2(0, -8)
+hframes = 3
+vframes = 4
+
+[node name="Yoke" type="Sprite2D" parent="."]
+z_index = 1
+texture_filter = 0
+position = Vector2(0, -10)
+texture = ExtResource("3_yoke")
+
+[node name="JugLeft" type="Sprite2D" parent="Yoke"]
+texture_filter = 0
+position = Vector2(-11, 7)
+texture = ExtResource("4_jugs")
+hframes = 2
+
+[node name="JugRight" type="Sprite2D" parent="Yoke"]
+texture_filter = 0
+position = Vector2(11, 7)
+texture = ExtResource("4_jugs")
+hframes = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 8)
+shape = SubResource("RectangleShape2D_feet")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(0, -8)

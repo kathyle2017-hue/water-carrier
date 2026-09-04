@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/water_run.gd" id="1_run"]
+[ext_resource type="Script" path="res://scripts/world.gd" id="2_world"]
+[ext_resource type="PackedScene" path="res://scenes/water_carrier.tscn" id="3_carrier"]
+[ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="4_hud"]
+
+[node name="WaterRun" type="Node2D"]
+y_sort_enabled = true
+script = ExtResource("1_run")
+
+[node name="World" type="Node2D" parent="."]
+script = ExtResource("2_world")
+
+[node name="WaterCarrier" parent="." instance=ExtResource("3_carrier")]
+
+[node name="HUD" parent="." instance=ExtResource("4_hud")]

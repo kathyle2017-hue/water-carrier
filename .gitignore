@@ -1,0 +1,15 @@
+.godot/
+.DS_Store
+*.translation
+export_presets.cfg
+*.apk
+*.aab
+*.ipa
+*.app
+*.exe
+*.pck
+*.zip
+# Local editor junk
+*.tmp
+tools/shot*.png
+
