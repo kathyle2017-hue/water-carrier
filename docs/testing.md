@@ -8,7 +8,7 @@ Use Godot 4.7. Run the complete check from the repository root:
 
 The runner finds `godot` on PATH or the macOS application at
 `/Applications/Godot.app`. Set `GODOT_BIN` to use another executable. It imports
-assets, checks every GDScript, then runs all four test files. Engine errors fail
+assets, checks every GDScript, then runs every test and smoke script. Engine errors fail
 the check even when Godot returns exit code zero.
 
 For a focused check after assets have been imported:
@@ -45,3 +45,6 @@ water-carrier and HUD observe them. Gameplay rules belong to those modules,
 while movement, drawing, their explicit handoffs, and the Bed persistence
 boundary stay in the Godot scene. This avoids adding a general road or Day
 framework.
+
+Standalone activities can be run directly from their scenes.
+Sewing: `scenes/sewing.tscn`; E unrolls, works, and packs; X skips the must.
