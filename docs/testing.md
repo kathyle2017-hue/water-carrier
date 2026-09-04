@@ -56,5 +56,6 @@ The current loop now continues through Sewing before Evening. E continues after 
 - Issue #9: Quán after water, with bike and table service.
 - Issue #10: Return ends play after the Quán season.
 - Issue #7: Parcel afternoons replace sewing or the shift.
+- Issue #11: Finished pieces go to the Office; rejected work persists until repaired and accepted.
 
 WASD/arrows move; E interacts; X may skip groceries or sewing; B sleeps after Pot. After six days N at Bed moves to the next delivered chapter. Pending repairs must be accepted first. Set WATER_CARRIER_SAVE_PATH for isolated saves; WATER_CARRIER_DAY=quiet provides the ordinary-day demo. The intro/character pictures in #5 still await a human.

@@ -99,7 +99,7 @@ func _continue_after_unload() -> void:
 func _continue_after_groceries() -> void:
 	if groceries.done and activity == null and not evening.started:
 		_day_bad = _day_bad or groceries.bad_day
-		_open_activity.call_deferred("sewing")
+		_open_activity.call_deferred("sewing", {"finish_piece": story.finish_piece_today, "needs_repair": story.needs_repair})
 
 func _open_activity(kind: String, options: Dictionary = {}) -> void:
 	if activity != null:
@@ -124,11 +124,19 @@ func _activity_done(kind: String, bad: bool) -> void:
 	if kind == "return":
 		# The last scene remains on its closing bowl; no new season follows it.
 		return
+	var piece_finished := false
+	if kind == "sewing":
+		piece_finished = activity.piece_finished
+	if kind == "evaluate":
+		story.needs_repair = activity.needs_repair
 	remove_child(activity)
 	activity.queue_free()
 	activity = null
 	_activity_finishing = false
-	_start_evening()
+	if kind == "sewing" and piece_finished and story.finish_piece_today:
+		_open_activity("evaluate", {"piece_repaired": story.needs_repair})
+	else:
+		_start_evening()
 
 func _start_evening() -> void:
 	world.show()
@@ -145,6 +153,8 @@ func _start_evening() -> void:
 func _update_bed_prompt() -> void:
 	if evening.asleep and _remembered:
 		hud.prompt_label.text = "E  Next day"
+	elif evening.can_sleep and story.needs_repair:
+		hud.help_label.text = "B sleeps. Repair the returned piece before leaving this chapter."
 	elif story.can_change_chapter and evening.can_sleep:
 		hud.help_label.text = "B sleeps. N sleeps and moves to the next chapter."
 
