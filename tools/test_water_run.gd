@@ -30,8 +30,11 @@ func _test_fill_and_unload() -> void:
 	_expect(run.interact(), "Unload starts at home")
 	run.advance(1.4, Vector2.ZERO, false)
 	_expect(run.done and not run.loaded and not run.busy, "Unload completes the Water run")
-	_expect(run.movement_speed(false) == 0.0, "the water-carrier stays at the household for Evening")
+	_expect(run.movement_speed(false) == 0.0, "the Water run stops owning movement after Unload")
 	_expect(run.feeling == "Clean water is home.", "completion reports clean water")
+	var completed_notice := run.notice
+	run.step_on_glass()
+	_expect(run.notice == completed_notice, "Glass belongs to the Water run, not the walk to Đông")
 	run.enter_unload(false)
 	run.enter_fill(true)
 	_expect(not run.interact(), "completed Water run cannot restart")

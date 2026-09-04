@@ -10,13 +10,16 @@ extends CanvasLayer
 @onready var evening_tint: ColorRect = $EveningTint
 
 var _run: WaterRunState
+var _groceries: GroceriesState
 var _evening: EveningState
 
 
-func setup(run: WaterRunState, evening: EveningState) -> void:
+func setup(run: WaterRunState, groceries: GroceriesState, evening: EveningState) -> void:
 	_run = run
+	_groceries = groceries
 	_evening = evening
 	_run.changed.connect(_refresh)
+	_groceries.changed.connect(_refresh)
 	_evening.changed.connect(_refresh)
 	_refresh()
 
@@ -24,6 +27,9 @@ func setup(run: WaterRunState, evening: EveningState) -> void:
 func _refresh() -> void:
 	if _evening.started:
 		_refresh_evening()
+		return
+	if _groceries.started:
+		_refresh_groceries()
 		return
 	evening_tint.visible = false
 	place_label.text = _run.place_name
@@ -56,3 +62,16 @@ func _refresh_evening() -> void:
 		help_label.text = "E sweeps. B sleeps now; morning will feel it."
 	else:
 		help_label.text = "E continues the household beat."
+
+
+func _refresh_groceries() -> void:
+	evening_tint.visible = false
+	place_label.text = _groceries.place_name()
+	feeling_label.text = _groceries.feeling
+	prompt_label.text = _groceries.prompt
+	notice_label.text = _groceries.notice if _groceries.notice != "" else _run.notice
+	lean_back.visible = false
+	if _groceries.busy or _groceries.done:
+		help_label.text = ""
+	else:
+		help_label.text = "WASD. No yoke; this is the short Groceries walk."

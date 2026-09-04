@@ -7,7 +7,7 @@ const MAP: PackedStringArray = [
 	"#,,TTTT,,,,,,,,t..t..t,,,,,,,,TTTT,,t,,,,,,,,,,,,,,,,,,dddddddd#",
 	"#,,tRRRRt,,,,,,.......,,,,,,,,t..t,,,,,,,,,,,,,,,,,,,bbkkkkdddd#",
 	"#,,tRRRRt,yyyyyyyyyyyy,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,bbkkkkdddd#",
-	"#,,tWWWWt,yyyyUyyyyyyy........,,.....................bbkkkkdddd#",
+	"#,,tWWWWt,yyyyUyyyyyyyD.......,,.....................bbkkkkdddd#",
 	"#,,tWhhWt,yyyyyyyyyyyy..g..g.................g.......bbkkkkdddd#",
 	"#,,tWhhWt,yyyyPyyyyyyy...............................bbFkkkdddd#",
 	"#,,tWWWW,,yyyyyyyyyyyy....g..............g...........bbkkkkdddd#",
@@ -33,6 +33,7 @@ const TILE_INDEX := {
 	"T": 12, # foliage
 	"t": 12,
 	"U": 14, # cistern
+	"D": 2,  # Đông stall approach
 	"P": 4,
 	"F": 10,
 	"g": 2,
@@ -46,6 +47,7 @@ func _ready() -> void:
 	_build_tiles()
 	_build_collision()
 	_spawn_glass()
+	_spawn_dong_stall()
 	_spawn_areas()
 	_add_rain()
 	_add_grade()
@@ -126,6 +128,29 @@ func _spawn_glass() -> void:
 func _spawn_areas() -> void:
 	add_child(_make_zone("FillZone", PackedStringArray(["k", "F"]), Vector2(TILE, TILE)))
 	add_child(_make_zone("UnloadZone", PackedStringArray(["U"]), Vector2(28, 28)))
+	add_child(_make_zone("DongZone", PackedStringArray(["D"]), Vector2(28, 28)))
+
+
+func _spawn_dong_stall() -> void:
+	var stall := Node2D.new()
+	stall.name = "DongStall"
+	stall.position = _mark_point("D") + Vector2(0, -20)
+	stall.z_index = 3
+	var wall := Polygon2D.new()
+	wall.polygon = PackedVector2Array([Vector2(-15, -12), Vector2(15, -12), Vector2(15, 8), Vector2(-15, 8)])
+	wall.color = Color(0.72, 0.48, 0.28)
+	stall.add_child(wall)
+	var awning := Polygon2D.new()
+	awning.polygon = PackedVector2Array([Vector2(-17, -14), Vector2(17, -14), Vector2(13, -8), Vector2(-13, -8)])
+	awning.color = Color(0.82, 0.66, 0.36)
+	stall.add_child(awning)
+	var sign := Label.new()
+	sign.text = "Đông"
+	sign.position = Vector2(-12, -13)
+	sign.add_theme_font_size_override("font_size", 8)
+	sign.add_theme_color_override("font_color", Color(0.28, 0.16, 0.1))
+	stall.add_child(sign)
+	add_child(stall)
 
 
 func _make_zone(zone_name: String, marks: PackedStringArray, size: Vector2) -> Area2D:
@@ -150,12 +175,17 @@ func _make_zone(zone_name: String, marks: PackedStringArray, size: Vector2) -> A
 
 
 func spawn_point() -> Vector2:
+	var point := _mark_point("P")
+	return point if point.x >= 0.0 else Vector2(80, 120)
+
+
+func _mark_point(mark: String) -> Vector2:
 	for y in MAP.size():
 		var row: String = MAP[y]
 		for x in row.length():
-			if row[x] == "P":
+			if row[x] == mark:
 				return Vector2(x * TILE + TILE / 2.0, y * TILE + TILE / 2.0)
-	return Vector2(80, 120)
+	return Vector2(-1, -1)
 
 
 func map_pixel_size() -> Vector2:
