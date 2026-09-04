@@ -11,9 +11,9 @@ var needs_repair := false
 var _saw_1975 := false
 
 var father_home: bool:
-	get: return chapter in ["school", "return"]
+	get: return chapter == "return" or (chapter == "school" and day < 2)
 var needs_1975_scene: bool:
-	get: return false
+	get: return chapter == "school" and day >= 2 and not _saw_1975
 var flood_opening: bool:
 	get: return chapter == "quiet" and day < 2
 var day_kind: String:
