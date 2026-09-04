@@ -8,6 +8,7 @@ func _init() -> void:
 	_test_walk_to_dong_starts_only_after_the_water_run()
 	_test_stall_is_one_short_list_pay_or_barter_bag_beat()
 	_test_returning_home_completes_groceries()
+	_test_skipped_groceries_still_returns_home()
 	if failures == 0:
 		print("groceries rules ok")
 	quit(1 if failures else 0)
@@ -63,3 +64,11 @@ func _expect(condition: bool, message: String) -> void:
 	if not condition:
 		failures += 1
 		push_error(message)
+
+func _test_skipped_groceries_still_returns_home() -> void:
+	var groceries := GroceriesState.new()
+	_expect(not groceries.skip(), "cannot skip before the trip starts")
+	groceries.start()
+	_expect(groceries.skip() and groceries.bad_day, "leaving without food is a Bad day")
+	groceries.enter_household(true)
+	_expect(groceries.done and groceries.bad_day, "a Bad groceries day still continues home")

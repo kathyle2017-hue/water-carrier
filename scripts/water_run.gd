@@ -7,14 +7,24 @@ extends Node2D
 var run: WaterRunState
 var groceries := GroceriesState.new()
 var evening := EveningState.new()
+var story: ChapterProgress
+var activity: Node2D
 var _memory: DayMemoryStore
 var _remembered := false
-
+var _day_bad := false
+var _change_chapter := false
+var _activity_finishing := false
 
 func _ready() -> void:
 	_memory = DayMemoryStore.new(_save_path())
 	var last_day := _memory.load_last_day()
+	story = ChapterProgress.new(last_day.get("progress", {}))
+	# Isolated demos and tests can enter an ordinary day without changing a save.
+	var demo := OS.get_environment("WATER_CARRIER_DAY")
+	if demo in ["quiet", "quan", "school", "return"]:
+		story = ChapterProgress.new({"chapter": demo, "day": 2 if demo == "quiet" else 0})
 	run = WaterRunState.new(bool(last_day.get("broom_skipped", false)))
+	_day_bad = run.bad_day
 	carrier.setup(run, groceries)
 	hud.setup(run, groceries, evening)
 	run.changed.connect(_continue_after_unload)
@@ -32,53 +42,116 @@ func _ready() -> void:
 		await RenderingServer.frame_post_draw
 		var image := get_viewport().get_texture().get_image()
 		var err := image.save_png(shot_path)
-		print("screenshot ", shot_path, " err=", err, " ", image.get_width(), "x", image.get_height())
+		print("screenshot ", shot_path, " err=", err)
 		get_tree().quit()
 
-
 func _physics_process(delta: float) -> void:
-	if not run.done:
+	if activity != null:
+		return
+	if not run.done and not evening.started:
 		run.set_place(world.place_at(carrier.global_position.x))
 	if groceries.started and not groceries.done:
+		var was_busy := groceries.busy
 		groceries.advance(delta)
-		if not groceries.busy and Input.is_action_just_pressed("interact"):
+		if not was_busy and Input.is_action_just_pressed("interact"):
 			groceries.interact()
+		if Input.is_action_just_pressed("skip"):
+			groceries.skip()
 		return
-	if not evening.started or evening.asleep:
+	if not evening.started:
 		return
+	if evening.asleep:
+		if not _remembered and Input.is_action_just_pressed("bed"):
+			_remember_at_bed()
+		if _remembered and Input.is_action_just_pressed("interact"):
+			get_tree().reload_current_scene()
+		return
+	var was_busy := evening.busy
 	evening.advance(delta)
-	if evening.busy:
+	if was_busy:
 		return
 	if Input.is_action_just_pressed("interact"):
 		evening.interact()
 	elif Input.is_action_just_pressed("bed"):
 		evening.sleep()
-
+	elif story.can_change_chapter and Input.is_action_just_pressed("next_chapter"):
+		_change_chapter = true
+		if not evening.sleep():
+			_change_chapter = false
+	_update_bed_prompt()
 
 func _continue_after_unload() -> void:
-	if run.done and not groceries.started:
-		groceries.start()
-
+	if not run.done or groceries.started or activity != null or evening.started:
+		return
+	_day_bad = _day_bad or run.bad_day
+	match story.day_kind:
+		_:
+			groceries.start()
 
 func _continue_after_groceries() -> void:
-	if groceries.done and not evening.started:
-		evening.start(run.bad_day)
+	if groceries.done and activity == null and not evening.started:
+		_day_bad = _day_bad or groceries.bad_day
+		_open_activity.call_deferred("sewing")
 
+func _open_activity(kind: String, options: Dictionary = {}) -> void:
+	if activity != null:
+		return
+	world.hide()
+	carrier.hide()
+	carrier.set_physics_process(false)
+	carrier.camera.enabled = false
+	hud.hide()
+	activity = load("res://scenes/%s.tscn" % kind).instantiate()
+	for key in options:
+		activity.set(key, options[key])
+	activity.completed.connect(func(bad: bool):
+		if not _activity_finishing:
+			_activity_finishing = true
+			_activity_done.call_deferred(kind, bad)
+	)
+	add_child(activity)
+
+func _activity_done(kind: String, bad: bool) -> void:
+	_day_bad = _day_bad or bad
+	remove_child(activity)
+	activity.queue_free()
+	activity = null
+	_activity_finishing = false
+	_start_evening()
+
+func _start_evening() -> void:
+	world.show()
+	carrier.show()
+	carrier.yoke.hide()
+	carrier.camera.enabled = true
+	carrier.global_position = world.spawn_point()
+	carrier.set_physics_process(false)
+	hud.show()
+	evening.start(_day_bad)
+	_update_bed_prompt()
+
+func _update_bed_prompt() -> void:
+	if evening.asleep and _remembered:
+		hud.prompt_label.text = "E  Next day"
+	elif story.can_change_chapter and evening.can_sleep:
+		hud.help_label.text = "B sleeps. N sleeps and moves to the next chapter."
 
 func _remember_at_bed() -> void:
 	if not evening.asleep or _remembered:
 		return
-	var error := _memory.remember_day(evening.bad_day, evening.broom_skipped)
+	var next := ChapterProgress.new(story.snapshot())
+	next.finish_day(_change_chapter)
+	var error := _memory.remember_day(evening.bad_day, evening.broom_skipped, next.snapshot())
 	if error != OK:
 		push_error("Bed could not remember the day: %s" % error_string(error))
+		hud.notice_label.text = "Bed could not save. Free disk space and press B to retry."
 		return
 	_remembered = true
-
+	_update_bed_prompt()
 
 func _save_path() -> String:
 	var override := OS.get_environment("WATER_CARRIER_SAVE_PATH")
 	return override if override != "" else DayMemoryStore.DEFAULT_PATH
-
 
 func _connect_zones() -> void:
 	var fill: Area2D = world.get_node("FillZone")

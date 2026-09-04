@@ -16,6 +16,7 @@ func _init() -> void:
 func _run() -> void:
 	var save_path := OS.get_temp_dir().path_join("water-carrier-smoke-%s.json" % Time.get_ticks_usec())
 	OS.set_environment("WATER_CARRIER_SAVE_PATH", save_path)
+	OS.set_environment("WATER_CARRIER_DAY", "quiet")
 	var scene = load("res://scenes/water_run.tscn").instantiate()
 	root.add_child(scene)
 	var carrier: CharacterBody2D = scene.get_node("WaterCarrier")
@@ -91,7 +92,14 @@ func _run() -> void:
 		return
 	await _walk_to(carrier, ROAD)
 	await _walk_to(carrier, HOUSEHOLD)
-	if not _expect(scene.groceries.done and scene.evening.started, "walking home continues into Evening"):
+	if not _expect(scene.groceries.done and not scene.evening.started and scene.activity != null, "walking home starts daytime Sewing"):
+		return
+	for step in 3:
+		await _interact()
+		await create_timer(1.6).timeout
+	if not _expect(scene.evening.started, "Sewing continues into Evening"):
+		return
+	if not _expect(scene.get_node("HUD/Help").visible, "household controls reappear after the loaded-water meter"):
 		return
 	if not _expect(scene.get_node("HUD/Prompt").text == "E  Talk", "Evening opens after Groceries"):
 		return
