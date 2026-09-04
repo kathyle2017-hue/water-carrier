@@ -15,7 +15,7 @@ var father_home: bool:
 var needs_1975_scene: bool:
 	get: return false
 var flood_opening: bool:
-	get: return false
+	get: return chapter == "quiet" and day < 2
 var day_kind: String:
 	get:
 		if chapter == "school":

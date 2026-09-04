@@ -239,3 +239,52 @@ func show_household(father_home: bool) -> void:
 	family.position = spawn_point() + Vector2(0, -28)
 	family.z_index = 4
 	add_child(family)
+
+
+func set_flood(opening: bool, day: int) -> void:
+	# Street water recurs in later mùa mưa. The ruined house and the 1978
+	# household Talk are confined to the opening days.
+	var street_water := Polygon2D.new()
+	street_water.name = "StreetWater"
+	street_water.polygon = PackedVector2Array([Vector2(270, 142), Vector2(700, 147), Vector2(736, 174), Vector2(300, 174)])
+	street_water.color = Color(0.58, 0.66, 0.54, 0.48 if opening else 0.25)
+	street_water.z_index = 1
+	add_child(street_water)
+	if not opening:
+		return
+	var ruin := Node2D.new()
+	ruin.name = "NeighborsHouse"
+	ruin.position = Vector2(485, 65)
+	ruin.z_index = 3
+	var floor_remains := Polygon2D.new()
+	floor_remains.polygon = PackedVector2Array([Vector2(-4, 2), Vector2(58, 2), Vector2(67, 21), Vector2(-9, 21)])
+	floor_remains.color = Color("b3946c")
+	ruin.add_child(floor_remains)
+	var broken_wall := Polygon2D.new()
+	broken_wall.polygon = PackedVector2Array([Vector2(0, 9), Vector2(0, -20), Vector2(14, -20), Vector2(14, -9), Vector2(26, -13), Vector2(26, 9)])
+	broken_wall.color = Color("c4ae82")
+	ruin.add_child(broken_wall)
+	var fallen_roof := Polygon2D.new()
+	fallen_roof.polygon = PackedVector2Array([Vector2(18, -3), Vector2(42, -8), Vector2(62, 12), Vector2(33, 16)])
+	fallen_roof.color = Color("91624b")
+	ruin.add_child(fallen_roof)
+	for i in 5:
+		var plank := Polygon2D.new()
+		plank.polygon = PackedVector2Array([Vector2(i * 10, 0), Vector2(i * 10 + 5, -16 + i * 2), Vector2(i * 10 + 10, 4)])
+		plank.color = Color("977757")
+		ruin.add_child(plank)
+	var sign := Label.new()
+	sign.text = "Neighbors · 1978"
+	sign.position = Vector2(-4, -30)
+	sign.add_theme_font_size_override("font_size", 8)
+	ruin.add_child(sign)
+	for i in (2 if day == 0 else 1):
+		var neighbor := Sprite2D.new()
+		neighbor.name = "Neighbor%d" % i
+		neighbor.texture = load("res://assets/water_carrier.png")
+		neighbor.hframes = 3
+		neighbor.vframes = 4
+		neighbor.position = Vector2(12 + i * 20, 13)
+		neighbor.modulate = Color("baa88b")
+		ruin.add_child(neighbor)
+	add_child(ruin)
