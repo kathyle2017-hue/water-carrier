@@ -89,6 +89,8 @@ func _continue_after_unload() -> void:
 		return
 	_day_bad = _day_bad or run.bad_day
 	match story.day_kind:
+		"parcel":
+			_open_activity.call_deferred("parcel")
 		"quan":
 			_open_activity.call_deferred("quan")
 		_:
