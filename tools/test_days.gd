@@ -23,6 +23,7 @@ func _run() -> void:
 	await _test_quiet_parcel()
 	await _test_quan_day()
 	await _test_return_is_terminal()
+	await _test_rejected_piece_returns_after_repair()
 	Engine.time_scale = 1.0
 	OS.set_environment("WATER_CARRIER_SAVE_PATH", _old_save)
 	OS.set_environment("WATER_CARRIER_DAY", _old_demo)
@@ -106,6 +107,58 @@ func _deliver_parcel(scene: Node2D) -> void:
 	await _walk_x(walker, 78, "move_left")
 	await _settle()
 
+func _sew_day(scene: Node2D) -> void:
+	await _water(scene)
+	if not _expect(scene.groceries.started, "ordinary sewing days retain morning groceries"):
+		return
+	scene.carrier.global_position = DONG
+	await _settle()
+	await _press("interact")
+	await create_timer(1.8).timeout
+	scene.carrier.global_position = HOUSEHOLD
+	await _settle()
+	if not _expect(_activity_is(scene, "sewing"), "bringing groceries home starts Sewing"):
+		return
+	for step in 3:
+		await _press("interact")
+		await create_timer(1.8).timeout
+
+func _office_visit(scene: Node2D, reject: bool) -> void:
+	var office: Node2D = scene.activity
+	var where := func() -> Vector2: return office.state.carrier_position
+	await _walk_position(where, Vector2(592, 104))
+	await _press("interact")
+	_expect(office.state.place == "Phú Hòa · Office hall", "real Office entry opens the authored hall")
+	await _walk_position(where, Vector2(272, 92))
+	await _press("interact")
+	await _walk_position(where, Vector2(216, 108))
+	await _press("interact")
+	_expect(office.state.needs_repair == reject, "Evaluate judges the current finished or repaired piece")
+	await _press("interact")
+	await _walk_position(where, Vector2(40, 128))
+	await _press("interact")
+	await _walk_position(where, Vector2(40, 112))
+	await _press("interact")
+	await _settle()
+
+func _walk_position(where: Callable, destination: Vector2) -> void:
+	for tick in 240:
+		var position: Vector2 = where.call()
+		var difference := destination - position
+		if difference.length() < 12.0:
+			break
+		for action in ["move_left", "move_right", "move_up", "move_down"]:
+			Input.action_release(action)
+		if absf(difference.x) > 7.0:
+			Input.action_press("move_right" if difference.x > 0 else "move_left")
+		if absf(difference.y) > 7.0:
+			Input.action_press("move_down" if difference.y > 0 else "move_up")
+		await physics_frame
+		await process_frame
+	for action in ["move_left", "move_right", "move_up", "move_down"]:
+		Input.action_release(action)
+	await _settle()
+	_expect((where.call() as Vector2).distance_to(destination) < 20.0, "real Office walking reaches its interaction point")
 func _test_school_evening() -> void:
 	var scene = await _open("school", 0, false)
 	if _expect(_activity_is(scene, "school"), "school starts at school without a morning water run"):
@@ -126,13 +179,22 @@ func _test_school_evening() -> void:
 	await _close(scene)
 
 func _test_quiet_parcel() -> void:
-	var scene = await _open("quiet", 5)
+	var scene = await _open("quiet", 5, true, true)
 	_expect(scene.activity == null and scene.carrier.is_visible_in_tree(), "quiet-year parcel begins with water")
 	await _water(scene)
 	if _expect(_activity_is(scene, "parcel"), "Unload opens parcel cooking instead of groceries or sewing"):
 		_expect(scene.run.done and not scene.groceries.started, "water is home before parcel food is cooked")
 		await _deliver_parcel(scene)
 		_expect(scene.evening.started and not scene.groceries.started, "quiet-year parcel leaves afternoon work out and reaches Evening")
+		_expect(scene.story.needs_repair, "a parcel day preserves the waiting repair")
+		for step in 3:
+			await _press("interact")
+			await create_timer(1.8).timeout
+		await _press("next_chapter")
+		_expect(not scene.evening.asleep, "N cannot abandon a rejected piece at the end of a parcel day")
+		await _press("bed")
+		var saved: Dictionary = DayMemoryStore.new(OS.get_environment("WATER_CARRIER_SAVE_PATH")).load_last_day().get("progress", {})
+		_expect(saved.get("chapter") == "quiet" and saved.get("needs_repair") == true and saved.get("day") == 6, "ordinary Bed preserves repair for the next sewing day")
 	await _close(scene)
 
 func _test_quan_day() -> void:
@@ -168,4 +230,35 @@ func _test_return_is_terminal() -> void:
 		_expect(_activity_is(scene, "return") and not scene.evening.started, "Return stays at its last bowl rather than opening another day")
 		_expect(not scene.carrier.is_visible_in_tree(), "Return never reveals a fresh water run")
 		_expect(scene.activity.get_node("Mother/Fan").visible, "Mother fans Father's food at Return")
+	await _close(scene)
+
+func _test_rejected_piece_returns_after_repair() -> void:
+	var scene = await _open("quiet", 3)
+	var saved_path := OS.get_environment("WATER_CARRIER_SAVE_PATH")
+	await _sew_day(scene)
+	if not _expect(_activity_is(scene, "evaluate"), "finishing a piece opens the Office the same day"):
+		await _close(scene)
+		return
+	await _office_visit(scene, true)
+	if not _expect(scene.evening.started and scene.story.needs_repair and scene.evening.bad_day, "a rejected piece comes home to a bad Evening with repair owed"):
+		await _close(scene)
+		return
+	# Complete Talk, Pot, and Broom through the same keys as play, then save at Bed.
+	for step in 3:
+		await _press("interact")
+		await create_timer(1.8).timeout
+	await _press("bed")
+	var remembered := DayMemoryStore.new(saved_path).load_last_day()
+	_expect(remembered.get("progress", {}).get("needs_repair", false), "Bed persists the rejected piece's repair obligation")
+	_expect(remembered.get("progress", {}).get("day", -1) == 4, "Bed advances to the next sewing day")
+	await _close(scene)
+	# Reopen the real persisted day, without editing its repair state or progress.
+	scene = MAIN.instantiate()
+	root.add_child(scene)
+	await _settle()
+	_expect(scene.activity == null and scene.story.needs_repair, "repair day begins with morning water and keeps the returned piece")
+	await _sew_day(scene)
+	if _expect(_activity_is(scene, "evaluate"), "repair sewing sends the ready piece back to the Office"):
+		await _office_visit(scene, false)
+		_expect(scene.evening.started and not scene.story.needs_repair, "acceptance clears the repair obligation and returns to Evening")
 	await _close(scene)

@@ -26,9 +26,9 @@ var day_kind: String:
 			return "parcel" if day % 3 == 2 else "quan"
 		return "return"
 var finish_piece_today: bool:
-	get: return false
+	get: return day_kind == "quiet" and not flood_opening and (needs_repair or (day >= 3 and day % 3 == 0))
 var can_change_chapter: bool:
-	get: return chapter != "return" and day + 1 >= SEASON_DAYS
+	get: return chapter != "return" and day + 1 >= SEASON_DAYS and not needs_repair
 
 func _init(saved: Dictionary = {}) -> void:
 	var saved_chapter := str(saved.get("chapter", "school"))
