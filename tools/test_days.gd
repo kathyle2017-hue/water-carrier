@@ -20,6 +20,7 @@ func _run() -> void:
 	OS.set_environment("WATER_CARRIER_DAY", "")
 	Engine.time_scale = 10.0
 	await _test_school_evening()
+	await _test_quiet_parcel()
 	await _test_quan_day()
 	await _test_return_is_terminal()
 	Engine.time_scale = 1.0
@@ -93,6 +94,18 @@ func _expect(condition: bool, message: String) -> bool:
 		push_error("DAY INTEGRATION: " + message)
 	return condition
 
+func _deliver_parcel(scene: Node2D) -> void:
+	_expect(scene.activity.state.movement_speed() == 0.0, "parcel cooking holds the road until food is ready")
+	await _press("interact")
+	await create_timer(2.0).timeout
+	var walker: Node2D = scene.activity.get_node("WaterCarrier")
+	await _walk_x(walker, 940, "move_right")
+	await _press("interact")
+	await create_timer(1.8).timeout
+	_expect(not scene.activity.state.loaded, "Handoff leaves the bags light")
+	await _walk_x(walker, 78, "move_left")
+	await _settle()
+
 func _test_school_evening() -> void:
 	var scene = await _open("school", 0, false)
 	if _expect(_activity_is(scene, "school"), "school starts at school without a morning water run"):
@@ -110,6 +123,16 @@ func _test_school_evening() -> void:
 			_expect(not scene.carrier.get_node("Yoke").is_visible_in_tree(), "school evening does not reveal the unused yoke")
 			await _press("interact")
 			_expect(scene.evening.feeling.contains("Father"), "school Talk includes Father")
+	await _close(scene)
+
+func _test_quiet_parcel() -> void:
+	var scene = await _open("quiet", 5)
+	_expect(scene.activity == null and scene.carrier.is_visible_in_tree(), "quiet-year parcel begins with water")
+	await _water(scene)
+	if _expect(_activity_is(scene, "parcel"), "Unload opens parcel cooking instead of groceries or sewing"):
+		_expect(scene.run.done and not scene.groceries.started, "water is home before parcel food is cooked")
+		await _deliver_parcel(scene)
+		_expect(scene.evening.started and not scene.groceries.started, "quiet-year parcel leaves afternoon work out and reaches Evening")
 	await _close(scene)
 
 func _test_quan_day() -> void:

@@ -21,9 +21,9 @@ var day_kind: String:
 		if chapter == "school":
 			return "school"
 		if chapter == "quiet":
-			return "quiet"
+			return "parcel" if day > 2 and day % 5 == 0 else "quiet"
 		if chapter == "quan":
-			return "quan"
+			return "parcel" if day % 3 == 2 else "quan"
 		return "return"
 var finish_piece_today: bool:
 	get: return false
