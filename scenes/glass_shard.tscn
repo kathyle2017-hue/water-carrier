@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/glass_shard.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/glass.png" id="2_tex"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_glass"]
+size = Vector2(8, 8)
+
+[node name="GlassShard" type="Area2D"]
+z_index = 5
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("1_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_tex")
+texture_filter = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_glass")
