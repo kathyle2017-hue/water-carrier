@@ -36,7 +36,9 @@ func _ready() -> void:
 	if rain is CPUParticles2D:
 		carrier.attach_rain(rain)
 	_connect_zones()
-	if story.day_kind == "school":
+	if story.chapter == "return":
+		_open_activity("return")
+	elif story.day_kind == "school":
 		_open_activity("school", {"father_home": story.father_home})
 	var shot_path := OS.get_environment("WATER_CARRIER_SHOT")
 	if shot_path != "":
@@ -117,6 +119,9 @@ func _open_activity(kind: String, options: Dictionary = {}) -> void:
 
 func _activity_done(kind: String, bad: bool) -> void:
 	_day_bad = _day_bad or bad
+	if kind == "return":
+		# The last scene remains on its closing bowl; no new season follows it.
+		return
 	remove_child(activity)
 	activity.queue_free()
 	activity = null
