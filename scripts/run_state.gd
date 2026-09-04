@@ -111,6 +111,8 @@ func movement_speed(hurry: bool) -> float:
 
 
 func step_on_glass() -> void:
+	if done:
+		return
 	_hurt_time = 1.4
 	_bad_day = true
 	if loaded:

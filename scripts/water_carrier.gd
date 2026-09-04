@@ -9,6 +9,7 @@ extends CharacterBody2D
 var _facing := Vector2.DOWN
 var _walk_phase := 0.0
 var _run: WaterRunState
+var _groceries: GroceriesState
 var _base_sprite_y := 0.0
 
 
@@ -32,8 +33,9 @@ func attach_rain(rain: CPUParticles2D) -> void:
 	rain.position = Vector2.ZERO
 
 
-func setup(run: WaterRunState) -> void:
+func setup(run: WaterRunState, groceries: GroceriesState) -> void:
 	_run = run
+	_groceries = groceries
 	_run.changed.connect(_refresh_load)
 	_refresh_load()
 
@@ -45,7 +47,8 @@ func _physics_process(delta: float) -> void:
 	_run.advance(delta, input, hurry)
 	if not was_busy and Input.is_action_just_pressed("interact"):
 		_run.interact()
-	velocity = Vector2.ZERO if was_busy else input * _run.movement_speed(hurry)
+	var speed := _groceries.movement_speed() if _run.done else _run.movement_speed(hurry)
+	velocity = Vector2.ZERO if was_busy else input * speed
 	if input.length() > 0.15 and velocity.length() > 0.0:
 		_facing = input.normalized()
 		_walk_phase += delta * (8.0 if _run.loaded else 11.0)

@@ -4,6 +4,7 @@ extends SceneTree
 ## Coordinates are fixture locations on this road, not a copy of its map parser.
 const STREAM := Vector2(888, 120)
 const HOUSEHOLD := Vector2(232, 88)
+const DONG := Vector2(360, 88)
 const ROAD := Vector2(600, 120)
 const GLASS := Vector2(392, 96) # Feet sit eight pixels below the body origin.
 
@@ -67,7 +68,32 @@ func _run() -> void:
 		return
 	if not _expect(scene.get_node("HUD/Notice").text == "The household has water.", "HUD receives the complete outcome"):
 		return
-	if not _expect(scene.evening.started and scene.get_node("HUD/Prompt").text == "E  Talk", "Unload continues into Evening at the household"):
+	if not _expect(scene.groceries.started and not scene.evening.started, "Unload starts the separate walk to Đông"):
+		return
+	if not _expect(not carrier.get_node("Yoke").visible and scene.get_node("HUD/Prompt").text == "Walk to Đông", "shopping starts only after the đòn gánh is set down"):
+		return
+	await _walk_to(carrier, GLASS)
+	if not _expect(not run.bad_day and run.notice == "The household has water.", "Glass does not belong to the walk to Đông"):
+		return
+	await _walk_to(carrier, DONG)
+	if not _expect(scene.groceries.prompt == "E  Groceries", "the real Đông zone offers Groceries"):
+		return
+	if not _expect(scene.get_node("HUD/Place").text == "Đông · Phú Bình", "Đông is a named Phú Bình spot separate from Fill"):
+		return
+	await _interact()
+	Input.action_press("move_right")
+	await _settle()
+	Input.action_release("move_right")
+	if not _expect(carrier.global_position.is_equal_approx(DONG), "the short stall beat holds the water-carrier still"):
+		return
+	await create_timer(1.7).timeout
+	if not _expect(scene.groceries.prompt == "Walk home", "list, pay or barter, and bag lead home"):
+		return
+	await _walk_to(carrier, ROAD)
+	await _walk_to(carrier, HOUSEHOLD)
+	if not _expect(scene.groceries.done and scene.evening.started, "walking home continues into Evening"):
+		return
+	if not _expect(scene.get_node("HUD/Prompt").text == "E  Talk", "Evening opens after Groceries"):
 		return
 	if not _expect(scene.find_children("*", "CharacterBody2D", true, false).size() == 1, "only the water-carrier is playable"):
 		return
@@ -104,7 +130,7 @@ func _run() -> void:
 		return
 	DirAccess.remove_absolute(save_path)
 	OS.set_environment("WATER_CARRIER_SAVE_PATH", "")
-	print("smoke ok: real zones, input, Fill, Unload, Evening, Bed memory, fresh run, Glass")
+	print("smoke ok: real zones, Fill, Unload, Đông, Groceries, Evening, Bed memory, Glass")
 	quit(0)
 
 
