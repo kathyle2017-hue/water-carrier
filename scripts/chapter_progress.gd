@@ -19,7 +19,7 @@ var flood_opening: bool:
 var day_kind: String:
 	get:
 		if chapter == "school":
-			return "school"
+			return "school_parcel" if day >= 3 and day % 3 == 0 else "school"
 		if chapter == "quiet":
 			return "parcel" if day > 2 and day % 5 == 0 else "quiet"
 		if chapter == "quan":

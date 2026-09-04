@@ -42,6 +42,8 @@ func _ready() -> void:
 		_open_activity("scene_1975")
 	elif story.day_kind == "school":
 		_open_activity("school", {"father_home": story.father_home})
+	elif story.day_kind == "school_parcel":
+		_open_activity("parcel")
 	else:
 		world.set_flood(story.flood_opening, story.day)
 	var shot_path := OS.get_environment("WATER_CARRIER_SHOT")
