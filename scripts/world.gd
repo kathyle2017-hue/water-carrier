@@ -229,3 +229,13 @@ func _add_grade() -> void:
 	# Wet and warm, not grey.
 	grade.color = Color(1.0, 0.93, 0.82)
 	add_child(grade)
+
+
+func show_household(father_home: bool) -> void:
+	var family := Node2D.new()
+	family.set_script(load("res://scripts/household_view.gd"))
+	family.father_home = father_home
+	family.name = "Household"
+	family.position = spawn_point() + Vector2(0, -28)
+	family.z_index = 4
+	add_child(family)

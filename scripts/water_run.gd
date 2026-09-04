@@ -36,6 +36,8 @@ func _ready() -> void:
 	if rain is CPUParticles2D:
 		carrier.attach_rain(rain)
 	_connect_zones()
+	if story.day_kind == "school":
+		_open_activity("school", {"father_home": story.father_home})
 	var shot_path := OS.get_environment("WATER_CARRIER_SHOT")
 	if shot_path != "":
 		await get_tree().create_timer(0.6).timeout
@@ -127,7 +129,8 @@ func _start_evening() -> void:
 	carrier.global_position = world.spawn_point()
 	carrier.set_physics_process(false)
 	hud.show()
-	evening.start(_day_bad)
+	world.show_household(story.father_home)
+	evening.start(_day_bad, story.father_home)
 	_update_bed_prompt()
 
 func _update_bed_prompt() -> void:
