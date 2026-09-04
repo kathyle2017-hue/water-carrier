@@ -48,3 +48,4 @@ framework.
 
 Standalone activities can be run directly from their scenes.
 Sewing: `scenes/sewing.tscn`; E unrolls, works, and packs; X skips the must.
+Parcel: `scenes/parcel.tscn`; cook, walk with Mother to Ái Thu, Handoff, return.
