@@ -20,6 +20,7 @@ func _run() -> void:
 	OS.set_environment("WATER_CARRIER_DAY", "")
 	Engine.time_scale = 10.0
 	await _test_school_evening()
+	await _test_quan_day()
 	Engine.time_scale = 1.0
 	OS.set_environment("WATER_CARRIER_SAVE_PATH", _old_save)
 	OS.set_environment("WATER_CARRIER_DAY", _old_demo)
@@ -108,4 +109,26 @@ func _test_school_evening() -> void:
 			_expect(not scene.carrier.get_node("Yoke").is_visible_in_tree(), "school evening does not reveal the unused yoke")
 			await _press("interact")
 			_expect(scene.evening.feeling.contains("Father"), "school Talk includes Father")
+	await _close(scene)
+
+func _test_quan_day() -> void:
+	var scene = await _open("quan", 0)
+	_expect(scene.activity == null and scene.carrier.is_visible_in_tree(), "quán day starts with water")
+	await _water(scene)
+	if _expect(_activity_is(scene, "quan"), "Unload starts the bike to quán"):
+		_expect(not scene.groceries.started and scene.run.done, "quán skips mandatory groceries after water")
+		Input.action_press("move_right")
+		for tick in 160:
+			await physics_frame
+			await process_frame
+			if scene.activity.state.working:
+				break
+		Input.action_release("move_right")
+		_expect(scene.activity.state.working, "actual bike input crosses Tràng Tiền and arrives at quán")
+		# A thin shift must still rejoin the household; wait through the real shift clock.
+		Engine.time_scale = 80.0
+		await create_timer(80.0).timeout
+		Engine.time_scale = 10.0
+		await _settle()
+		_expect(scene.evening.started and scene.evening.bad_day, "a timed-out shift reaches Evening as a bad day")
 	await _close(scene)
