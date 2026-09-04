@@ -59,6 +59,13 @@ var prompt: String:
 		return "Shift  hurry" if loaded else ""
 
 
+func _init(previous_broom_was_skipped := false) -> void:
+	if previous_broom_was_skipped:
+		_bad_day = true
+		_feeling = "Morning begins with yesterday's Broom undone."
+		_notice = "Leaves from last night still cling to the yard. Mother looks once."
+
+
 func interact() -> bool:
 	if _can_fill():
 		_phase = Phase.FILLING
@@ -95,7 +102,7 @@ func advance(delta: float, input: Vector2, hurry: bool) -> void:
 
 
 func movement_speed(hurry: bool) -> float:
-	if busy:
+	if busy or done:
 		return 0.0
 	var speed := LIGHT_SPEED
 	if loaded:

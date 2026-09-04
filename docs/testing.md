@@ -8,13 +8,14 @@ Use Godot 4.7. Run the complete check from the repository root:
 
 The runner finds `godot` on PATH or the macOS application at
 `/Applications/Godot.app`. Set `GODOT_BIN` to use another executable. It imports
-assets, checks every GDScript, then runs both test files. Engine errors fail the
-check even when Godot returns exit code zero.
+assets, checks every GDScript, then runs all three test files. Engine errors fail
+the check even when Godot returns exit code zero.
 
 For a focused check after assets have been imported:
 
 ```sh
 /Applications/Godot.app/Contents/MacOS/Godot --headless --path . --script tools/test_water_run.gd
+/Applications/Godot.app/Contents/MacOS/Godot --headless --path . --script tools/test_evening.gd
 /Applications/Godot.app/Contents/MacOS/Godot --headless --path . --script tools/smoke_water_run.gd
 ```
 
@@ -23,13 +24,17 @@ For a focused check after assets have been imported:
   Unload, refusal of unavailable interactions, spill/refill, persistent Bad day,
   coherent notifications, and independent runs. It advances time directly;
   repeated Glass contacts make the spill check independent of random drift.
+- `test_evening.gd` exercises Evening and Bed through their play-facing actions.
+  It checks good- and Bad-day Talk, the short chop / stir / serve Pot beat,
+  completing or skipping Broom, Bed persistence, and the next-morning hangover.
 - `smoke_water_run.gd` loads the real scene, positions the water-carrier at
   authored fixture locations, waits for physics zones, and presses actual input
   actions. It checks zone entry and exit, busy movement, the HUD and jugs,
-  fresh-scene state, and Glass contact. It does not call private interaction
-  methods or parse the map. If the road changes, update its fixture coordinates.
+  Unload into Evening, one playable body, Bed persistence, next-morning state,
+  and Glass contact. It does not call private interaction methods or parse the
+  map. If the road changes, update its fixture coordinates.
 
-The scene owns a fresh `WaterRunState`; the water-carrier and HUD share it.
-Gameplay rules belong to that module, while movement and drawing stay in Godot.
-The scene connects the world's zones and reports the current place. This keeps
-scene setup explicit without adding a general road or Day framework.
+The scene owns a fresh `WaterRunState` and `EveningState`; the water-carrier and
+HUD observe them. Gameplay rules belong to those modules, while movement,
+drawing, their `Unload` handoff, and the Bed persistence boundary stay explicit
+in the Godot scene. This avoids adding a general road or Day framework.

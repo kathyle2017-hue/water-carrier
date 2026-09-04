@@ -33,7 +33,7 @@ for script in scripts/*.gd tools/*.gd; do
   run_godot --check-only --script "$script"
 done
 echo 'GDScript checks passed.'
-for test in tools/test_water_run.gd tools/smoke_water_run.gd; do
+for test in tools/test_water_run.gd tools/test_evening.gd tools/smoke_water_run.gd; do
   run_godot --script "$test"
   cat "$log_dir/output"
 done

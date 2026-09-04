@@ -4,12 +4,20 @@ extends Node2D
 @onready var carrier: CharacterBody2D = $WaterCarrier
 @onready var hud: CanvasLayer = $HUD
 
-var run := WaterRunState.new()
+var run: WaterRunState
+var evening := EveningState.new()
+var _memory: DayMemoryStore
+var _remembered := false
 
 
 func _ready() -> void:
+	_memory = DayMemoryStore.new(_save_path())
+	var last_day := _memory.load_last_day()
+	run = WaterRunState.new(bool(last_day.get("broom_skipped", false)))
 	carrier.setup(run)
-	hud.setup(run)
+	hud.setup(run, evening)
+	run.changed.connect(_continue_after_unload)
+	evening.changed.connect(_remember_at_bed)
 	carrier.global_position = world.spawn_point()
 	carrier.setup_camera(world.map_pixel_size())
 	var rain := world.get_node_or_null("Rain")
@@ -26,8 +34,37 @@ func _ready() -> void:
 		get_tree().quit()
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	run.set_place(world.place_at(carrier.global_position.x))
+	if not evening.started or evening.asleep:
+		return
+	evening.advance(delta)
+	if evening.busy:
+		return
+	if Input.is_action_just_pressed("interact"):
+		evening.interact()
+	elif Input.is_action_just_pressed("bed"):
+		evening.sleep()
+
+
+func _continue_after_unload() -> void:
+	if run.done and not evening.started:
+		evening.start(run.bad_day)
+
+
+func _remember_at_bed() -> void:
+	if not evening.asleep or _remembered:
+		return
+	var error := _memory.remember_day(evening.bad_day, evening.broom_skipped)
+	if error != OK:
+		push_error("Bed could not remember the day: %s" % error_string(error))
+		return
+	_remembered = true
+
+
+func _save_path() -> String:
+	var override := OS.get_environment("WATER_CARRIER_SAVE_PATH")
+	return override if override != "" else DayMemoryStore.DEFAULT_PATH
 
 
 func _connect_zones() -> void:

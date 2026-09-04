@@ -5,6 +5,13 @@
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_script")
 
+[node name="EveningTint" type="ColorRect" parent="."]
+visible = false
+offset_right = 320.0
+offset_bottom = 180.0
+mouse_filter = 2
+color = Color(0.08, 0.08, 0.16, 0.28)
+
 [node name="PlaceBack" type="ColorRect" parent="."]
 offset_left = 4.0
 offset_top = 3.0
