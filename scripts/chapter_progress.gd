@@ -3,7 +3,7 @@ extends RefCounted
 
 ## The biography calendar. Seasons remain open for ordinary days; at Bed the
 ## player can move on after the same minimum stretch in each season.
-const SEASONS := ["school", "quiet"]
+const SEASONS := ["school", "quiet", "quan"]
 const SEASON_DAYS := 6
 var chapter := "school"
 var day := 0
@@ -28,7 +28,7 @@ var day_kind: String:
 var finish_piece_today: bool:
 	get: return false
 var can_change_chapter: bool:
-	get: return chapter != "quiet" and day + 1 >= SEASON_DAYS
+	get: return chapter != "quan" and day + 1 >= SEASON_DAYS
 
 func _init(saved: Dictionary = {}) -> void:
 	var saved_chapter := str(saved.get("chapter", "school"))
