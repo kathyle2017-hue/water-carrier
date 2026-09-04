@@ -40,6 +40,8 @@ func _ready() -> void:
 		_open_activity("return")
 	elif story.day_kind == "school":
 		_open_activity("school", {"father_home": story.father_home})
+	else:
+		world.set_flood(story.flood_opening, story.day)
 	var shot_path := OS.get_environment("WATER_CARRIER_SHOT")
 	if shot_path != "":
 		await get_tree().create_timer(0.6).timeout
@@ -147,7 +149,7 @@ func _start_evening() -> void:
 	carrier.set_physics_process(false)
 	hud.show()
 	world.show_household(story.father_home)
-	evening.start(_day_bad, story.father_home)
+	evening.start(_day_bad, story.father_home, story.day if story.flood_opening else -1)
 	_update_bed_prompt()
 
 func _update_bed_prompt() -> void:

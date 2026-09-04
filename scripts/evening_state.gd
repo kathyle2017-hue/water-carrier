@@ -18,6 +18,7 @@ enum Phase {
 }
 
 var father_home := false
+var _flood_day := -1
 
 var _phase := Phase.NOT_STARTED
 var _busy_time := 0.0
@@ -71,10 +72,11 @@ var prompt: String:
 		return ""
 
 
-func start(day_was_bad: bool, father_is_home := false) -> void:
+func start(day_was_bad: bool, father_is_home := false, flood_day := -1) -> void:
 	if _phase != Phase.NOT_STARTED:
 		return
 	father_home = father_is_home
+	_flood_day = flood_day
 	_bad_day = day_was_bad
 	_phase = Phase.TALK_READY
 	changed.emit()
@@ -89,6 +91,10 @@ func interact() -> bool:
 			_feeling = "Mother fans Father's bowl. Father: Sit with us. Sister makes room."
 			if bad_day:
 				_feeling = "Mother fans Father's bowl. Father: Rest a little. Sister moves closer."
+		elif _flood_day == 0:
+			_feeling = "Mother: The neighbors' house is ruined. Sister: We heard the rain all night."
+		elif _flood_day == 1:
+			_feeling = "Mother: Our neighbors died in the flood. Sister sits close. The bowls are warm."
 	elif _phase == Phase.POT_READY:
 		_phase = Phase.COOKING
 		_busy_time = 0.5

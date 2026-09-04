@@ -5,6 +5,7 @@ var failures := 0
 
 
 func _init() -> void:
+	_test_family_presence_and_flood_talk()
 	_test_talk_opens_the_evening()
 	_test_talk_reflects_the_day_without_a_dialogue_tree()
 	_test_pot_is_one_short_chop_stir_serve_beat()
@@ -105,3 +106,23 @@ func _expect(condition: bool, message: String) -> void:
 	if not condition:
 		failures += 1
 		push_error(message)
+
+func _test_family_presence_and_flood_talk() -> void:
+	var school := EveningState.new()
+	school.start(false, true)
+	school.interact()
+	_expect(school.father_home and school.feeling.contains("Father"), "School dinner includes Father and Mother's Fan")
+	var flood := EveningState.new()
+	flood.start(false, false, 1)
+	flood.interact()
+	_expect(flood.feeling.contains("neighbors") and flood.feeling.contains("died"), "1978 deaths are carried in household Talk")
+	var rain := EveningState.new()
+	rain.start(false, false, -1)
+	rain.interact()
+	_expect(not rain.feeling.contains("died"), "later rain never repeats the 1978 deaths")
+	var save_path := OS.get_temp_dir().path_join("water-carrier-calendar-%s.json" % Time.get_ticks_usec())
+	var memory := DayMemoryStore.new(save_path)
+	_expect(memory.remember_day(false, false, {"chapter": "quiet", "day": 4, "needs_repair": true}) == OK, "Bed saves chapter and pending repair")
+	var saved: Dictionary = memory.load_last_day()
+	_expect(saved.get("progress", {}).get("needs_repair") == true, "unfinished repair survives reload")
+	DirAccess.remove_absolute(save_path)
