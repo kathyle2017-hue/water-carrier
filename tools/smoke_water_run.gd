@@ -13,6 +13,8 @@ func _init() -> void:
 
 
 func _run() -> void:
+	var save_path := OS.get_temp_dir().path_join("water-carrier-smoke-%s.json" % Time.get_ticks_usec())
+	OS.set_environment("WATER_CARRIER_SAVE_PATH", save_path)
 	var scene = load("res://scenes/water_run.tscn").instantiate()
 	root.add_child(scene)
 	var carrier: CharacterBody2D = scene.get_node("WaterCarrier")
@@ -65,6 +67,26 @@ func _run() -> void:
 		return
 	if not _expect(scene.get_node("HUD/Notice").text == "The household has water.", "HUD receives the complete outcome"):
 		return
+	if not _expect(scene.evening.started and scene.get_node("HUD/Prompt").text == "E  Talk", "Unload continues into Evening at the household"):
+		return
+	if not _expect(scene.find_children("*", "CharacterBody2D", true, false).size() == 1, "only the water-carrier is playable"):
+		return
+	await _interact()
+	await create_timer(1.3).timeout
+	await _interact()
+	await create_timer(1.7).timeout
+	if not _expect(scene.get_node("HUD/Prompt").text == "E  Broom    B  Bed", "Talk and the short Pot beat reach the night choice"):
+		return
+	Input.action_press("bed")
+	await physics_frame
+	await process_frame
+	Input.action_release("bed")
+	await _settle()
+	if not _expect(scene.evening.asleep, "Bed closes the Evening"):
+		return
+	var remembered := DayMemoryStore.new(save_path).load_last_day()
+	if not _expect(remembered.get("broom_skipped") == true, "Bed remembers the skipped Broom"):
+		return
 
 	scene.queue_free()
 	await process_frame
@@ -73,12 +95,16 @@ func _run() -> void:
 	carrier = scene.get_node("WaterCarrier")
 	run = scene.run
 	await _settle()
-	if not _expect(not run.done and not run.bad_day and not run.loaded, "a fresh scene owns a fresh run"):
+	if not _expect(not run.done and run.bad_day and not run.loaded, "a fresh scene owns a new run with the Bad day hangover"):
+		return
+	if not _expect(run.notice == "Leaves from last night still cling to the yard. Mother looks once.", "the next morning loads the remembered Broom consequence"):
 		return
 	await _walk_to(carrier, GLASS)
 	if not _expect(run.bad_day, "real Glass contact reaches Water run rules"):
 		return
-	print("smoke ok: real zones, input, Fill, Unload, fresh run, Glass")
+	DirAccess.remove_absolute(save_path)
+	OS.set_environment("WATER_CARRIER_SAVE_PATH", "")
+	print("smoke ok: real zones, input, Fill, Unload, Evening, Bed memory, fresh run, Glass")
 	quit(0)
 
 
