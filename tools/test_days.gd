@@ -21,6 +21,7 @@ func _run() -> void:
 	Engine.time_scale = 10.0
 	await _test_school_evening()
 	await _test_quan_day()
+	await _test_return_is_terminal()
 	Engine.time_scale = 1.0
 	OS.set_environment("WATER_CARRIER_SAVE_PATH", _old_save)
 	OS.set_environment("WATER_CARRIER_DAY", _old_demo)
@@ -131,4 +132,17 @@ func _test_quan_day() -> void:
 		Engine.time_scale = 10.0
 		await _settle()
 		_expect(scene.evening.started and scene.evening.bad_day, "a timed-out shift reaches Evening as a bad day")
+	await _close(scene)
+
+func _test_return_is_terminal() -> void:
+	var scene = await _open("return", 0)
+	if _expect(_activity_is(scene, "return"), "Return opens its closing household scene"):
+		await create_timer(2.0).timeout
+		for beat in 3:
+			await _press("interact")
+		for beat in 2:
+			await _press("interact")
+		_expect(_activity_is(scene, "return") and not scene.evening.started, "Return stays at its last bowl rather than opening another day")
+		_expect(not scene.carrier.is_visible_in_tree(), "Return never reveals a fresh water run")
+		_expect(scene.activity.get_node("Mother/Fan").visible, "Mother fans Father's food at Return")
 	await _close(scene)
