@@ -38,6 +38,8 @@ func _ready() -> void:
 	_connect_zones()
 	if story.chapter == "return":
 		_open_activity("return")
+	elif story.needs_1975_scene:
+		_open_activity("scene_1975")
 	elif story.day_kind == "school":
 		_open_activity("school", {"father_home": story.father_home})
 	else:
@@ -135,7 +137,10 @@ func _activity_done(kind: String, bad: bool) -> void:
 	activity.queue_free()
 	activity = null
 	_activity_finishing = false
-	if kind == "sewing" and piece_finished and story.finish_piece_today:
+	if kind == "scene_1975":
+		story.see_1975()
+		_open_activity("school", {"father_home": false, "start_in_class": true})
+	elif kind == "sewing" and piece_finished and story.finish_piece_today:
 		_open_activity("evaluate", {"piece_repaired": story.needs_repair})
 	else:
 		_start_evening()

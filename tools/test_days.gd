@@ -22,6 +22,7 @@ func _run() -> void:
 	await _test_school_evening()
 	await _test_quiet_parcel()
 	await _test_quan_day()
+	await _test_1975_cut_to_class()
 	await _test_return_is_terminal()
 	await _test_rejected_piece_returns_after_repair()
 	Engine.time_scale = 1.0
@@ -217,6 +218,17 @@ func _test_quan_day() -> void:
 		Engine.time_scale = 10.0
 		await _settle()
 		_expect(scene.evening.started and scene.evening.bad_day, "a timed-out shift reaches Evening as a bad day")
+	await _close(scene)
+
+func _test_1975_cut_to_class() -> void:
+	var scene = await _open("school", 2, false)
+	if _expect(_activity_is(scene, "scene_1975"), "1975 opens its short scene inside the school season"):
+		for beat in 3:
+			await _press("interact")
+		if _expect(_activity_is(scene, "school"), "1975 cuts directly back to Huế class"):
+			_expect(scene.activity.start_in_class and not scene.activity.father_home, "class resumes without Father")
+			_expect(scene.activity.get_node("WaterCarrier").position.x > 230, "the cut places her at class, not at the water run")
+			_expect(not scene.story.needs_1975_scene, "the capture scene is marked seen for this day")
 	await _close(scene)
 
 func _test_return_is_terminal() -> void:

@@ -58,5 +58,6 @@ The current loop now continues through Sewing before Evening. E continues after 
 - Issue #7: Parcel afternoons replace sewing or the shift.
 - Issue #11: Finished pieces go to the Office; rejected work persists until repaired and accepted.
 - Issue #12: 1978 opens the quiet year as flood days; later rain does not repeat those deaths.
+- Issue #13: 1975 leads directly into class without Father.
 
 WASD/arrows move; E interacts; X may skip groceries or sewing; B sleeps after Pot. After six days N at Bed moves to the next delivered chapter. Pending repairs must be accepted first. Set WATER_CARRIER_SAVE_PATH for isolated saves; WATER_CARRIER_DAY=quiet provides the ordinary-day demo. The intro/character pictures in #5 still await a human.
