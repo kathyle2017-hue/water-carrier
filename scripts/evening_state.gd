@@ -17,6 +17,7 @@ enum Phase {
 	ASLEEP,
 }
 
+
 var _phase := Phase.NOT_STARTED
 var _busy_time := 0.0
 var _bad_day := false
@@ -42,6 +43,8 @@ var broom_done: bool:
 	get: return _broom_done
 var broom_skipped: bool:
 	get: return _broom_skipped
+var can_sleep: bool:
+	get: return _phase in [Phase.EVENING_CHOICE, Phase.BED_READY]
 var asleep: bool:
 	get: return _phase == Phase.ASLEEP
 var feeling: String:
@@ -121,7 +124,7 @@ func advance(delta: float) -> void:
 
 
 func sleep() -> bool:
-	if _phase != Phase.EVENING_CHOICE and _phase != Phase.BED_READY:
+	if not can_sleep:
 		return false
 	_broom_skipped = not broom_done
 	if broom_skipped:

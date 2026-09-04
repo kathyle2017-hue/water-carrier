@@ -58,7 +58,7 @@ func _refresh_evening() -> void:
 	lean_back.visible = false
 	if _evening.asleep:
 		help_label.text = ""
-	elif _evening.prompt == "E  Broom    B  Bed":
+	elif _evening.can_sleep and not _evening.broom_done:
 		help_label.text = "E sweeps. B sleeps now; morning will feel it."
 	else:
 		help_label.text = "E continues the household beat."
@@ -74,4 +74,4 @@ func _refresh_groceries() -> void:
 	if _groceries.busy or _groceries.done:
 		help_label.text = ""
 	else:
-		help_label.text = "WASD. No yoke; this is the short Groceries walk."
+		help_label.text = "WASD to Đông. X returns with an empty bag."

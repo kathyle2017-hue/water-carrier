@@ -12,12 +12,13 @@ func _init(path := DEFAULT_PATH) -> void:
 	_path = path
 
 
-func remember_day(bad_day: bool, broom_skipped: bool) -> Error:
+func remember_day(bad_day: bool, broom_skipped: bool, progress: Dictionary = {}) -> Error:
 	var previous := load_last_day()
 	var remembered := {
 		"completed_days": int(previous.get("completed_days", 0)) + 1,
 		"bad_day": bad_day,
 		"broom_skipped": broom_skipped,
+		"progress": progress,
 	}
 	var directory := ProjectSettings.globalize_path(_path.get_base_dir())
 	var error := DirAccess.make_dir_recursive_absolute(directory)
@@ -44,4 +45,5 @@ func load_last_day() -> Dictionary:
 		"completed_days": maxi(0, int(parsed.get("completed_days", 0))),
 		"bad_day": bool(parsed.get("bad_day", false)),
 		"broom_skipped": bool(parsed.get("broom_skipped", false)),
+		"progress": parsed.get("progress", {}) if parsed.get("progress", {}) is Dictionary else {},
 	}

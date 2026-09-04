@@ -69,6 +69,15 @@ bed={
 ]
 }
 
+skip={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":88)]
+}
+next_chapter={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":78)]
+}
+
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0

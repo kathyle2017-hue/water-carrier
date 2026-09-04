@@ -9,8 +9,11 @@ enum Phase { NOT_STARTED, WALKING_TO_DONG, SHOPPING, WALKING_HOME, DONE }
 
 const WALK_SPEED := 58.0
 
+var bad_day := false
+
 var _phase := Phase.NOT_STARTED
 var _in_dong := false
+var _in_household := false
 var _busy_time := 0.0
 var _stall_step := 0
 var _feeling := ""
@@ -89,10 +92,11 @@ func enter_dong(inside: bool) -> void:
 
 
 func enter_household(inside: bool) -> void:
+	_in_household = inside
 	if inside and _phase == Phase.WALKING_HOME:
 		_phase = Phase.DONE
-		_feeling = "The bag is set down beside the clean water."
-		_notice = "Groceries are home."
+		_feeling = "The bag is set down beside the clean water." if not bad_day else "No groceries today. Dinner will be thin."
+		_notice = "Groceries are home." if not bad_day else "The household will feel the empty bag."
 	changed.emit()
 
 
@@ -104,3 +108,16 @@ func place_name() -> String:
 	if _phase == Phase.WALKING_HOME:
 		return "Phú Bình → Household"
 	return "Household"
+
+
+func skip() -> bool:
+	if _phase != Phase.WALKING_TO_DONG:
+		return false
+	bad_day = true
+	_phase = Phase.WALKING_HOME
+	_feeling = "The bag is empty. Walk home."
+	if _in_household:
+		enter_household(true)
+	else:
+		changed.emit()
+	return true
