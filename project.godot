@@ -16,10 +16,6 @@ run/main_scene="res://scenes/water_run.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 
-[autoload]
-
-RunState="*res://scripts/run_state.gd"
-
 [display]
 
 window/size/viewport_width=320

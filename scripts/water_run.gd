@@ -4,8 +4,12 @@ extends Node2D
 @onready var carrier: CharacterBody2D = $WaterCarrier
 @onready var hud: CanvasLayer = $HUD
 
+var run := WaterRunState.new()
+
 
 func _ready() -> void:
+	carrier.setup(run)
+	hud.setup(run)
 	carrier.global_position = world.spawn_point()
 	carrier.setup_camera(world.map_pixel_size())
 	var rain := world.get_node_or_null("Rain")
@@ -22,22 +26,26 @@ func _ready() -> void:
 		get_tree().quit()
 
 
+func _physics_process(_delta: float) -> void:
+	run.set_place(world.place_at(carrier.global_position.x))
+
+
 func _connect_zones() -> void:
 	var fill: Area2D = world.get_node("FillZone")
 	var unload: Area2D = world.get_node("UnloadZone")
 	fill.body_entered.connect(func(body):
 		if body == carrier:
-			carrier.enter_fill(true)
+			run.enter_fill(true)
 	)
 	fill.body_exited.connect(func(body):
 		if body == carrier:
-			carrier.enter_fill(false)
+			run.enter_fill(false)
 	)
 	unload.body_entered.connect(func(body):
 		if body == carrier:
-			carrier.enter_unload(true)
+			run.enter_unload(true)
 	)
 	unload.body_exited.connect(func(body):
 		if body == carrier:
-			carrier.enter_unload(false)
+			run.enter_unload(false)
 	)
