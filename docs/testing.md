@@ -52,5 +52,6 @@ The current loop now continues through Sewing before Evening. E continues after 
 - Issue #3: standalone daytime Sewing.
 - Issue #4: standalone Ái Thu parcel road.
 - Issue #6: ordinary quiet-year water, groceries, sewing, evening and Bed.
+- Issue #8: School days with Father at dinner; School can advance into the quiet year at Bed.
 
 WASD/arrows move; E interacts; X may skip groceries or sewing; B sleeps after Pot. After six days N at Bed moves to the next delivered chapter. Pending repairs must be accepted first. Set WATER_CARRIER_SAVE_PATH for isolated saves; WATER_CARRIER_DAY=quiet provides the ordinary-day demo. The intro/character pictures in #5 still await a human.
