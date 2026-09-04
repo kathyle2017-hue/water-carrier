@@ -20,6 +20,7 @@ func _run() -> void:
 	OS.set_environment("WATER_CARRIER_DAY", "")
 	Engine.time_scale = 10.0
 	await _test_school_evening()
+	await _test_school_parcel()
 	await _test_quiet_parcel()
 	await _test_quan_day()
 	await _test_1975_cut_to_class()
@@ -31,7 +32,7 @@ func _run() -> void:
 	for path in _paths:
 		DirAccess.remove_absolute(path)
 	if failures == 0:
-		print("available day integration checks passed")
+		print("day integration ok: school, parcel seasons, water to quán, 1975, Return, repair persistence")
 	quit(1 if failures else 0)
 
 func _open(chapter: String, day: int, saw_1975 := true, repair := false) -> Node2D:
@@ -45,121 +46,6 @@ func _open(chapter: String, day: int, saw_1975 := true, repair := false) -> Node
 	await _settle()
 	return scene
 
-func _water(scene: Node2D) -> void:
-	scene.carrier.global_position = STREAM
-	await _settle()
-	await _press("interact")
-	await create_timer(2.0).timeout
-	_expect(scene.run.loaded, "Fill loads water through the real stream zone")
-	scene.carrier.global_position = HOUSEHOLD
-	await _settle()
-	await _press("interact")
-	await create_timer(1.6).timeout
-	await _settle()
-	_expect(scene.run.done, "Unload completes water through the real household zone")
-
-func _walk_x(body: Node2D, target: float, action: String) -> void:
-	Input.action_press(action)
-	for tick in 240:
-		await physics_frame
-		await process_frame
-		if not is_instance_valid(body):
-			break
-		if (action == "move_right" and body.position.x >= target) or (action == "move_left" and body.position.x <= target):
-			break
-	Input.action_release(action)
-	await _settle()
-
-func _activity_is(scene: Node2D, kind: String) -> bool:
-	return scene.activity != null and scene.activity.scene_file_path == "res://scenes/%s.tscn" % kind
-
-func _press(action: String) -> void:
-	Input.action_press(action)
-	await physics_frame
-	await process_frame
-	Input.action_release(action)
-	await _settle()
-
-func _settle() -> void:
-	for tick in 3:
-		await physics_frame
-		await process_frame
-
-func _close(scene: Node2D) -> void:
-	scene.queue_free()
-	await process_frame
-	await _settle()
-
-func _expect(condition: bool, message: String) -> bool:
-	if not condition:
-		failures += 1
-		push_error("DAY INTEGRATION: " + message)
-	return condition
-
-func _deliver_parcel(scene: Node2D) -> void:
-	_expect(scene.activity.state.movement_speed() == 0.0, "parcel cooking holds the road until food is ready")
-	await _press("interact")
-	await create_timer(2.0).timeout
-	var walker: Node2D = scene.activity.get_node("WaterCarrier")
-	await _walk_x(walker, 940, "move_right")
-	await _press("interact")
-	await create_timer(1.8).timeout
-	_expect(not scene.activity.state.loaded, "Handoff leaves the bags light")
-	await _walk_x(walker, 78, "move_left")
-	await _settle()
-
-func _sew_day(scene: Node2D) -> void:
-	await _water(scene)
-	if not _expect(scene.groceries.started, "ordinary sewing days retain morning groceries"):
-		return
-	scene.carrier.global_position = DONG
-	await _settle()
-	await _press("interact")
-	await create_timer(1.8).timeout
-	scene.carrier.global_position = HOUSEHOLD
-	await _settle()
-	if not _expect(_activity_is(scene, "sewing"), "bringing groceries home starts Sewing"):
-		return
-	for step in 3:
-		await _press("interact")
-		await create_timer(1.8).timeout
-
-func _office_visit(scene: Node2D, reject: bool) -> void:
-	var office: Node2D = scene.activity
-	var where := func() -> Vector2: return office.state.carrier_position
-	await _walk_position(where, Vector2(592, 104))
-	await _press("interact")
-	_expect(office.state.place == "Phú Hòa · Office hall", "real Office entry opens the authored hall")
-	await _walk_position(where, Vector2(272, 92))
-	await _press("interact")
-	await _walk_position(where, Vector2(216, 108))
-	await _press("interact")
-	_expect(office.state.needs_repair == reject, "Evaluate judges the current finished or repaired piece")
-	await _press("interact")
-	await _walk_position(where, Vector2(40, 128))
-	await _press("interact")
-	await _walk_position(where, Vector2(40, 112))
-	await _press("interact")
-	await _settle()
-
-func _walk_position(where: Callable, destination: Vector2) -> void:
-	for tick in 240:
-		var position: Vector2 = where.call()
-		var difference := destination - position
-		if difference.length() < 12.0:
-			break
-		for action in ["move_left", "move_right", "move_up", "move_down"]:
-			Input.action_release(action)
-		if absf(difference.x) > 7.0:
-			Input.action_press("move_right" if difference.x > 0 else "move_left")
-		if absf(difference.y) > 7.0:
-			Input.action_press("move_down" if difference.y > 0 else "move_up")
-		await physics_frame
-		await process_frame
-	for action in ["move_left", "move_right", "move_up", "move_down"]:
-		Input.action_release(action)
-	await _settle()
-	_expect((where.call() as Vector2).distance_to(destination) < 20.0, "real Office walking reaches its interaction point")
 func _test_school_evening() -> void:
 	var scene = await _open("school", 0, false)
 	if _expect(_activity_is(scene, "school"), "school starts at school without a morning water run"):
@@ -177,6 +63,15 @@ func _test_school_evening() -> void:
 			_expect(not scene.carrier.get_node("Yoke").is_visible_in_tree(), "school evening does not reveal the unused yoke")
 			await _press("interact")
 			_expect(scene.evening.feeling.contains("Father"), "school Talk includes Father")
+	await _close(scene)
+
+func _test_school_parcel() -> void:
+	var scene = await _open("school", 3)
+	if _expect(_activity_is(scene, "parcel"), "school parcel skips class and starts cooking"):
+		_expect(not scene.carrier.is_visible_in_tree() and not scene.run.done, "school parcel has no morning water run")
+		await _deliver_parcel(scene)
+		_expect(scene.evening.started and not scene.evening.father_home, "school parcel returns to Evening while Father is away")
+		_expect(not scene.groceries.started, "school parcel never adds groceries")
 	await _close(scene)
 
 func _test_quiet_parcel() -> void:
@@ -244,6 +139,69 @@ func _test_return_is_terminal() -> void:
 		_expect(scene.activity.get_node("Mother/Fan").visible, "Mother fans Father's food at Return")
 	await _close(scene)
 
+func _water(scene: Node2D) -> void:
+	scene.carrier.global_position = STREAM
+	await _settle()
+	await _press("interact")
+	await create_timer(2.0).timeout
+	_expect(scene.run.loaded, "Fill loads water through the real stream zone")
+	scene.carrier.global_position = HOUSEHOLD
+	await _settle()
+	await _press("interact")
+	await create_timer(1.6).timeout
+	await _settle()
+	_expect(scene.run.done, "Unload completes water through the real household zone")
+
+func _deliver_parcel(scene: Node2D) -> void:
+	_expect(scene.activity.state.movement_speed() == 0.0, "parcel cooking holds the road until food is ready")
+	await _press("interact")
+	await create_timer(2.0).timeout
+	var walker: Node2D = scene.activity.get_node("WaterCarrier")
+	await _walk_x(walker, 940, "move_right")
+	await _press("interact")
+	await create_timer(1.8).timeout
+	_expect(not scene.activity.state.loaded, "Handoff leaves the bags light")
+	await _walk_x(walker, 78, "move_left")
+	await _settle()
+
+func _walk_x(body: Node2D, target: float, action: String) -> void:
+	Input.action_press(action)
+	for tick in 240:
+		await physics_frame
+		await process_frame
+		if not is_instance_valid(body):
+			break
+		if (action == "move_right" and body.position.x >= target) or (action == "move_left" and body.position.x <= target):
+			break
+	Input.action_release(action)
+	await _settle()
+
+func _activity_is(scene: Node2D, kind: String) -> bool:
+	return scene.activity != null and scene.activity.scene_file_path == "res://scenes/%s.tscn" % kind
+
+func _press(action: String) -> void:
+	Input.action_press(action)
+	await physics_frame
+	await process_frame
+	Input.action_release(action)
+	await _settle()
+
+func _settle() -> void:
+	for tick in 3:
+		await physics_frame
+		await process_frame
+
+func _close(scene: Node2D) -> void:
+	scene.queue_free()
+	await process_frame
+	await _settle()
+
+func _expect(condition: bool, message: String) -> bool:
+	if not condition:
+		failures += 1
+		push_error("DAY INTEGRATION: " + message)
+	return condition
+
 func _test_rejected_piece_returns_after_repair() -> void:
 	var scene = await _open("quiet", 3)
 	var saved_path := OS.get_environment("WATER_CARRIER_SAVE_PATH")
@@ -274,3 +232,56 @@ func _test_rejected_piece_returns_after_repair() -> void:
 		await _office_visit(scene, false)
 		_expect(scene.evening.started and not scene.story.needs_repair, "acceptance clears the repair obligation and returns to Evening")
 	await _close(scene)
+
+func _sew_day(scene: Node2D) -> void:
+	await _water(scene)
+	if not _expect(scene.groceries.started, "ordinary sewing days retain morning groceries"):
+		return
+	scene.carrier.global_position = DONG
+	await _settle()
+	await _press("interact")
+	await create_timer(1.8).timeout
+	scene.carrier.global_position = HOUSEHOLD
+	await _settle()
+	if not _expect(_activity_is(scene, "sewing"), "bringing groceries home starts Sewing"):
+		return
+	for step in 3:
+		await _press("interact")
+		await create_timer(1.8).timeout
+
+func _office_visit(scene: Node2D, reject: bool) -> void:
+	var office: Node2D = scene.activity
+	var where := func() -> Vector2: return office.state.carrier_position
+	await _walk_position(where, Vector2(592, 104))
+	await _press("interact")
+	_expect(office.state.place == "Phú Hòa · Office hall", "real Office entry opens the authored hall")
+	await _walk_position(where, Vector2(272, 92))
+	await _press("interact")
+	await _walk_position(where, Vector2(216, 108))
+	await _press("interact")
+	_expect(office.state.needs_repair == reject, "Evaluate judges the current finished or repaired piece")
+	await _press("interact")
+	await _walk_position(where, Vector2(40, 128))
+	await _press("interact")
+	await _walk_position(where, Vector2(40, 112))
+	await _press("interact")
+	await _settle()
+
+func _walk_position(where: Callable, destination: Vector2) -> void:
+	for tick in 240:
+		var position: Vector2 = where.call()
+		var difference := destination - position
+		if difference.length() < 12.0:
+			break
+		for action in ["move_left", "move_right", "move_up", "move_down"]:
+			Input.action_release(action)
+		if absf(difference.x) > 7.0:
+			Input.action_press("move_right" if difference.x > 0 else "move_left")
+		if absf(difference.y) > 7.0:
+			Input.action_press("move_down" if difference.y > 0 else "move_up")
+		await physics_frame
+		await process_frame
+	for action in ["move_left", "move_right", "move_up", "move_down"]:
+		Input.action_release(action)
+	await _settle()
+	_expect((where.call() as Vector2).distance_to(destination) < 20.0, "real Office walking reaches its interaction point")
